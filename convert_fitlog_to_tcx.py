@@ -34,7 +34,6 @@ import os
 import argparse
 from datetime import datetime, timedelta
 from lxml import etree as ET
-from lxml import objectify
 
 def convert_fitlog_to_tcx(fitlog_filename, output_folder, split):
 
@@ -95,7 +94,7 @@ def write_activity(fitlog_root, activity, tcx_activities):
     calories = activity.find("Calories", fitlog_root.nsmap)
     category = activity.find("Category", fitlog_root.nsmap)
     sport_name=category.get("Name")
-    if sport_name == "My Activities":
+    if sport_name == "My Activities" or sport_name == "Other":
         sport_name = "Running"
     location = activity.find("Location", fitlog_root.nsmap)
     start_time_str = activity.get("StartTime")
@@ -142,10 +141,21 @@ def write_activity(fitlog_root, activity, tcx_activities):
                 if (point_time >= lap_start_time) and ((next_lap_start_time == 0) or (point_time < next_lap_start_time)):
                     trackpoint = ET.SubElement(tcx_track, "Trackpoint")
                     ET.SubElement(trackpoint, "Time").text = point_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-                    tk_position = ET.SubElement(trackpoint, "Position")#.extend([ET.Element("LatitudeDegrees"), ET.Element("LongitudeDegrees")])
-                    ET.SubElement(tk_position, "LatitudeDegrees").text = point.get("lat")
-                    ET.SubElement(tk_position, "LongitudeDegrees").text = point.get("lon")
-                    ET.SubElement(trackpoint, "AltitudeMeters").text = point.get("ele")
+                    latitude=point.get("lat")
+                    longitude=point.get("lon")
+                    # Don't record point if no lat/lon
+                    if (latitude is not None and longitude is not None):
+                        tk_position = ET.SubElement(trackpoint, "Position")#.extend([ET.Element("LatitudeDegrees"), ET.Element("LongitudeDegrees")])
+                        ET.SubElement(tk_position, "LatitudeDegrees").text =latitude 
+                        ET.SubElement(tk_position, "LongitudeDegrees").text = longitude
+                    #Only record Alt if it is available
+                    altitude=point.get("ele")
+                    if (altitude is not None):
+                        ET.SubElement(trackpoint, "AltitudeMeters").text = altitude
+                    heartrate=point.get("hr")
+                    if (heartrate is not None):
+                        hrbpm = ET.SubElement(tcx_activity, "HeartRateBpm", {xsi_type: "HeartRateInBeatsPerMinute_t"})
+                        ET.SubElement(hrbpm, "Value").text=heartrate
             lap_number = lap_number + 1
     return start_time
 
