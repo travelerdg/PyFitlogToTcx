@@ -42,7 +42,7 @@ valid_sports = ["Running", "Biking", "Multisport", "Other"]
 def get_sport_mapping(sport_mapping_file):
     print(f"Parsing {sport_mapping_file}")
     sport_dictionary = {}
-    with open(sport_mapping_file, mode='r') as infile:
+    with open(sport_mapping_file, mode='r', encoding="utf-8") as infile: # for special characters in mapped sports
         reader = csv.reader(infile, skipinitialspace=True, quoting=csv.QUOTE_STRINGS)
         sport_dictionary = {rows[0]:rows[1] for rows in reader}
     return sport_dictionary
